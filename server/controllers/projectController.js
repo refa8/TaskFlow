@@ -1,0 +1,77 @@
+const { getAllProjects, createProject, getProjectById, updateProject, deleteProject } = require("../services/projectService");
+
+
+const getProjects = async (req, res) => {
+    try {
+        const projects = await getAllProjects();
+        res.status(200).json(projects);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error fetching projects', error: error.message });
+    }
+};
+
+const addProject = async (req, res) => {
+    try {
+        const {name, description, owner_id} = req.body;
+
+        const project = await createProject(name, description, owner_id);
+        res.status(201).json(project);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to create project' });
+    }   
+};
+
+const getProject = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await getProjectById(id);
+        if(!project){
+            return res.status(404).json({ message: 'Project not found' });
+        } 
+        res.status(200).json(project);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to fetch project' });
+    }
+}; 
+
+const editProject = async (req, res) => {
+    try{
+        const { id } = req.params;
+        const { name, description, status } = req.body;
+
+        const project = await updateProject(id, name, description, status);
+        if(!project){
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        res.status(200).json(project);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to update project' });
+    }
+};
+
+const removeProject = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await deleteProject(id);
+        if(!project){
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        res.status(200).json(project);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to delete project' });
+    }
+};
+
+
+module.exports = {
+    getProjects,
+    addProject,
+    getProject,
+    editProject,
+    removeProject
+};
