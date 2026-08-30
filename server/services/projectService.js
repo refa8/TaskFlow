@@ -12,7 +12,7 @@ const createProject = async (name, description, owner_id) => {
     return result.rows[0];
 };
 
-const getProjectById = async (id) => {
+const getProjectById = async (id, owner_id) => {
     const result = await pool.query("SELECT * FROM projects WHERE project_id = $1", [id]);
     return result.rows[0];  
 };
