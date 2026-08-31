@@ -1,7 +1,8 @@
 const pool = require("../config/db");
 
-const getAllProjects = async () => {
-    const result = await pool.query("SELECT * FROM projects ORDER BY project_id");
+const getAllProjects = async (page, limit) => {
+    const offset = (page - 1) * limit;
+    const result = await pool.query("SELECT * FROM projects ORDER BY project_id LIMIT $1 OFFSET $2", [limit, offset]);
     return result.rows;
 };
 

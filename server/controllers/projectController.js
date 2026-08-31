@@ -3,7 +3,9 @@ const { getAllProjects, createProject, getProjectById, updateProject, deleteProj
 
 const getProjects = async (req, res) => {
     try {
-        const projects = await getAllProjects();
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const projects = await getAllProjects(page, limit);
         res.status(200).json(projects);
     } catch (error) {
         console.error(error);
