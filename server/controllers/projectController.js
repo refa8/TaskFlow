@@ -5,8 +5,19 @@ const getProjects = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 5;
-        const projects = await getAllProjects(page, limit);
-        res.status(200).json(projects);
+        const search = req.query.search || '';
+
+        if (page < 1 || limit < 1) {
+            return res.status(400).json({ message: 'Page and limit must be positive integers' });
+        }
+
+
+
+        const {projects, totalProjects} = await getAllProjects(search, page, limit);
+
+        const totalPages = Math.ceil(totalProjects / limit);
+
+        res.status(200).json({ projects, pagination: { page, limit, totalProjects, totalPages } });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching projects', error: error.message });

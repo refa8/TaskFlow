@@ -1,9 +1,14 @@
 const pool = require("../config/db");
 
-const getAllProjects = async (page, limit) => {
+const getAllProjects = async (search, page, limit) => {
     const offset = (page - 1) * limit;
-    const result = await pool.query("SELECT * FROM projects ORDER BY project_id LIMIT $1 OFFSET $2", [limit, offset]);
-    return result.rows;
+    const searchPattern = `%${search}%`;
+    const result = await pool.query(`SELECT * FROM projects WHERE name ILIKE $1 ORDER BY project_id LIMIT $2 OFFSET $3`, [searchPattern, limit, offset]);
+    const countResult = await pool.query(`SELECT COUNT(*) FROM projects WHERE name ILIKE $1`, [searchPattern]);
+    return {
+        projects: result.rows,
+        totalProjects: parseInt(countResult.rows[0].count)
+    };
 };
 
 const createProject = async (name, description, owner_id) => {
