@@ -3,11 +3,11 @@ const { getAllProjects, createProject, getProjectById, updateProject, deleteProj
 
 const getProjects = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 5;
+        const page = req.query.page !== undefined ? Number(req.query.page) : 1;
+        const limit = req.query.limit !== undefined ? Number(req.query.limit) : 5;
         const search = req.query.search || '';
 
-        if (page < 1 || limit < 1) {
+        if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
             return res.status(400).json({ message: 'Page and limit must be positive integers' });
         }
 

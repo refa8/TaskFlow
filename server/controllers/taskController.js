@@ -4,8 +4,20 @@ const { getProjectById } = require('../services/projectService');
 const getTasks = async (req, res) => {
     try {
         const owner_id = req.user.id;
-        const tasks = await getAllTasks(owner_id);
-        res.status(200).json(tasks);
+
+        const page = req.query.page !== undefined ? Number(req.query.page) : 1;
+        const limit = req.query.limit !== undefined ? Number(req.query.limit) : 5;
+        const search = req.query.search || '';
+
+        if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
+            return res.status(400).json({ message: 'Page and limit must be positive integers' });
+        }
+
+        const { tasks, totalTasks } = await getAllTasks(owner_id, search, page, limit);
+
+        const totalPages = Math.ceil(totalTasks / limit);
+        
+        res.status(200).json({ tasks, pagination: { page, limit, totalTasks, totalPages } });
     } catch (error) {
         console.error(error);
         res.status(500).json({  message: "Failed to fetch tasks" });
