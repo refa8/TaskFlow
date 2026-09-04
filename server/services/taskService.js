@@ -1,17 +1,19 @@
 const pool = require("../config/db");
 
-const getAllTasks = async (owner_id, search, page, limit) => {
+const getAllTasks = async (owner_id, search, status, priority, page, limit, sortBy, sortOrder) => {
 
     const offset = (page - 1) * limit;
     const searchPattern = `%${search}%`;
+    const statusPattern = `%${status}%`;
+    const priorityPattern = `%${priority}%`;
 
     const result = await pool.query(
-        `SELECT tasks.* FROM tasks JOIN projects ON tasks.project_id = projects.project_id WHERE projects.owner_id = $1 AND tasks.name ILIKE $2 ORDER BY tasks.task_id LIMIT $3 OFFSET $4`,
-        [owner_id, searchPattern, limit, offset]
+        `SELECT tasks.* FROM tasks JOIN projects ON tasks.project_id = projects.project_id WHERE projects.owner_id = $1 AND tasks.name ILIKE $2 AND tasks.status ILIKE $3 AND tasks.priority ILIKE $4 ORDER BY tasks.${sortBy} ${sortOrder} LIMIT $5 OFFSET $6`,
+        [owner_id, searchPattern, statusPattern, priorityPattern, limit, offset]
     );
     const countResult = await pool.query(
-        `SELECT COUNT(*) FROM tasks JOIN projects ON tasks.project_id = projects.project_id WHERE projects.owner_id = $1 AND tasks.name ILIKE $2`,
-        [owner_id, searchPattern]
+        `SELECT COUNT(*) FROM tasks JOIN projects ON tasks.project_id = projects.project_id WHERE projects.owner_id = $1 AND tasks.name ILIKE $2 AND tasks.status ILIKE $3 AND tasks.priority ILIKE $4`,
+        [owner_id, searchPattern, statusPattern, priorityPattern]
     );
     return { tasks: result.rows, totalTasks: Number(countResult.rows[0].count) };
 };

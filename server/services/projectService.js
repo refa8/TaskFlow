@@ -1,10 +1,11 @@
 const pool = require("../config/db");
 
-const getAllProjects = async (search, page, limit) => {
+const getAllProjects = async (search, status, page, limit, sortBy, sortOrder) => {
     const offset = (page - 1) * limit;
     const searchPattern = `%${search}%`;
-    const result = await pool.query(`SELECT * FROM projects WHERE name ILIKE $1 ORDER BY project_id LIMIT $2 OFFSET $3`, [searchPattern, limit, offset]);
-    const countResult = await pool.query(`SELECT COUNT(*) FROM projects WHERE name ILIKE $1`, [searchPattern]);
+    const statusPattern = `%${status}%`;
+    const result = await pool.query(`SELECT * FROM projects WHERE name ILIKE $1 AND status ILIKE $2 ORDER BY ${sortBy} ${sortOrder} LIMIT $3 OFFSET $4`, [searchPattern, statusPattern, limit, offset]);
+    const countResult = await pool.query(`SELECT COUNT(*) FROM projects WHERE name ILIKE $1 AND status ILIKE $2`, [searchPattern, statusPattern]);
     return {
         projects: result.rows,
         totalProjects: parseInt(countResult.rows[0].count)

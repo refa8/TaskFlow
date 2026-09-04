@@ -6,14 +6,33 @@ const getProjects = async (req, res) => {
         const page = req.query.page !== undefined ? Number(req.query.page) : 1;
         const limit = req.query.limit !== undefined ? Number(req.query.limit) : 5;
         const search = req.query.search || '';
+        const status = req.query.status || '';
+        const sortBy = req.query.sortBy || 'project_id';
+        const order = req.query.order || 'asc';
+        const allowedSortFields = ['project_id', 'name', 'status', 'created_at'];
+        const allowedOrder = ['asc', 'desc'];
+        const sortOrder = order.toLowerCase();
+        const validStatuses = ["planned", "ongoing", "completed"];
 
         if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
             return res.status(400).json({ message: 'Page and limit must be positive integers' });
         }
 
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        if (!allowedSortFields.includes(sortBy)) {
+            return res.status(400).json({ message: 'Invalid sortBy field' });
+        }
+
+        if (!allowedOrder.includes(sortOrder)) {
+            return res.status(400).json({ message: 'Invalid sort order' });
+        }
 
 
-        const {projects, totalProjects} = await getAllProjects(search, page, limit);
+
+        const {projects, totalProjects} = await getAllProjects(search, status, page, limit, sortBy, sortOrder);
 
         const totalPages = Math.ceil(totalProjects / limit);
 

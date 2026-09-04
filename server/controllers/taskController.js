@@ -4,16 +4,42 @@ const { getProjectById } = require('../services/projectService');
 const getTasks = async (req, res) => {
     try {
         const owner_id = req.user.id;
-
         const page = req.query.page !== undefined ? Number(req.query.page) : 1;
         const limit = req.query.limit !== undefined ? Number(req.query.limit) : 5;
         const search = req.query.search || '';
+        const status = req.query.status || '';
+        const priority = req.query.priority || '';
+        const sortBy = req.query.sortBy || 'task_id';
+        const order = req.query.order || 'asc';
+        const allowedSortFields = ['task_id', 'name', 'status', 'priority', 'created_at'];
+        const allowedOrder = ['asc', 'desc'];
+        const sortOrder = order.toLowerCase();
+        const validStatuses = ["todo", "in_progress", "completed"];
+        const validPriorities = ["low", "medium", "high"];
+
+
 
         if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
             return res.status(400).json({ message: 'Page and limit must be positive integers' });
         }
 
-        const { tasks, totalTasks } = await getAllTasks(owner_id, search, page, limit);
+        if (status && !validStatuses.includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        if (priority && !validPriorities.includes(priority)) {
+            return res.status(400).json({ message: 'Invalid priority' });
+        }
+        
+        if (!allowedSortFields.includes(sortBy)) {
+            return res.status(400).json({ message: 'Invalid sortBy field' });
+        }
+        
+        if (!allowedOrder.includes(sortOrder)) {
+            return res.status(400).json({ message: 'Invalid sort order' });
+        }
+
+        const { tasks, totalTasks } = await getAllTasks(owner_id, search, status, priority, page, limit, sortBy, sortOrder);
 
         const totalPages = Math.ceil(totalTasks / limit);
         
