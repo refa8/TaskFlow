@@ -64,9 +64,7 @@ const getProject = async (req, res) => {
         if(!project){
             return res.status(404).json({ message: 'Project not found' });
         } 
-        if (project.owner_id !== req.user.id) {
-            return res.status(403).json({ message: 'You are not authorized to view this project' });
-        }
+        
         res.status(200).json(project);
     } catch (error) {
         console.error(error);
@@ -83,10 +81,11 @@ const editProject = async (req, res) => {
         if(!project){
             return res.status(404).json({ message: 'Project not found' });
         }
-        if (project.owner_id !== req.user.id) {
-            return res.status(403).json({ message: 'You are not authorized to edit this project' });
+        
+        const {id:userId, role} =req.user;
+        if (role === "manager" && project.owner_id!== userId){
+            return res.status(403).json({ message: 'You are not authorized to update this project' });
         }
-
         const updatedProject = await updateProject(id, name, description, status);
         
         res.status(200).json(updatedProject);
@@ -99,12 +98,12 @@ const editProject = async (req, res) => {
 const removeProject = async (req, res) => {
     try {
         const { id } = req.params;
-
+        const {id:userId, role} =req.user;
         const project = await getProjectById(id);
         if(!project){
             return res.status(404).json({ message: 'Project not found' });
         }
-        if (project.owner_id !== req.user.id) {
+        if(role === "manager" && project.owner_id !== req.user.id){
             return res.status(403).json({ message: 'You are not authorized to delete this project' });
         }
 

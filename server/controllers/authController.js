@@ -12,6 +12,9 @@ const registerUser = async (req, res) => {
         res.status(201).json({ message: "User registered successfully", user: safeUser });
     } catch (error) {
         console.error(error);
+        if (error.code === '23505') {
+            return res.status(409).json({ message: "Username already exists" });
+        }
         res.status(500).json({ message: "Error registering user" });
     }
 };
@@ -21,7 +24,7 @@ const loginUser = async (req, res) => {
         const { username, password } = req.body;
         const user = await getUserByUsername(username);
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {

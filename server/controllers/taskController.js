@@ -3,7 +3,8 @@ const { getProjectById } = require('../services/projectService');
 
 const getTasks = async (req, res) => {
     try {
-        const owner_id = req.user.id;
+        const user_id = req.user.id; // Assuming the user ID is stored in req.user after authentication
+        const {role} = req.user;
         const page = req.query.page !== undefined ? Number(req.query.page) : 1;
         const limit = req.query.limit !== undefined ? Number(req.query.limit) : 5;
         const search = req.query.search || '';
@@ -39,7 +40,7 @@ const getTasks = async (req, res) => {
             return res.status(400).json({ message: 'Invalid sort order' });
         }
 
-        const { tasks, totalTasks } = await getAllTasks(owner_id, search, status, priority, page, limit, sortBy, sortOrder);
+        const { tasks, totalTasks } = await getAllTasks(user_id,role, search, status, priority, page, limit, sortBy, sortOrder);
 
         const totalPages = Math.ceil(totalTasks / limit);
         
@@ -54,6 +55,13 @@ const addTask = async (req, res) => {
     try {
         const { name, project_id, assigned_to, status, priority } = req.body;
         const owner_id = req.user.id; // Assuming the user ID is stored in req.user after authentication
+        const project = await getProjectById(project_id);
+        if (!project) {
+            return res.status(404).json({ message: "Project not found" });
+        }
+        if (project.owner_id !== owner_id) {
+            return res.status(403).json({ message: "You are not authorized to create a task for this project" });
+        }
         const task = await createTask(name, project_id, assigned_to, status, priority, owner_id);
         if (!task) {
             return res.status(400).json({ message: "You are not allowed to create a task for this project" });
@@ -74,15 +82,31 @@ const getTask = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        const project = await getProjectById(task.project_id);
-        if(!project){
-            return res.status(404).json({ message: "Associated project not found"})
+        const {id:userId, role} =req.user;
+        if(role ==="admin"){
+            return res.status(200).json(task);
         }
+        
+        if(role === "manager") {
+            const project = await getProjectById(task.project_id);
 
-        if (project.owner_id !== req.user.id) {
-            return res.status(403).json({ message: "You are not authorized to view this task" });
+            if(!project){
+                return res.status(404).json({ message: "Associated project not found" });
+            }
+            if(project.owner_id !== userId){
+                return res.status(403).json({ message: "You are not authorized to view this task" });
+            }
+            return res.status(200).json(task);
         }
-        res.status(200).json(task);
+        
+        if(role === "member") {
+            if(task.assigned_to !== userId){
+                return res.status(403).json({ message: "You are not authorized to view this task" });
+            }
+            return res.status(200).json(task);
+        }
+        return res.status(403).json({ message: "Invalid user role" });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to fetch task" });
@@ -150,22 +174,35 @@ const editTask = async (req, res) => {
 const removeTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const owner_id = req.user.id;
+        const user_id = req.user.id;
+        const { role } = req.user;
+
         const task = await getTaskById(id);
         if(!task){
             return res.status(404).json({ message: "Task not found" });
         }
-        
-        const project = await getProjectById(task.project_id);
 
-        if(project.owner_id !== owner_id){
-            return res.status(403).json({ message: "You are not authorized to delete this task"});
+        if (role === "admin") {
+            await deleteTask(id);
+            return res.status(200).json({ message: "Task deleted successfully" });
         }
 
-        await deleteTask(id);
-        
+        if (role === "manager") {
+            const project = await getProjectById(task.project_id);
+            if (!project) {
+                return res.status(404).json({ message: "Associated project not found" });
+            }
 
-        res.status(200).json({ message: "Task deleted successfully" });
+            if (project.owner_id !== user_id) {
+                return res.status(403).json({ message: "You are not authorized to delete this task" });
+            }
+            await deleteTask(id);
+            return res.status(200).json({ message: "Task deleted successfully" });
+        }
+
+
+        return res.status(403).json({ message: "You are not authorized to delete this task" });
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to delete task" });
