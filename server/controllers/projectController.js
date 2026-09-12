@@ -1,5 +1,5 @@
 const { getAllProjects, createProject, getProjectById, updateProject, deleteProject } = require("../services/projectService");
-
+const  { createActivityLog } = require("../services/activityLogService");
 
 const getProjects = async (req, res) => {
     try {
@@ -49,6 +49,9 @@ const addProject = async (req, res) => {
         const owner_id = req.user.id; // Assuming the user ID is stored in req.user after authentication
 
         const project = await createProject(name, description, owner_id);
+        
+        await createActivityLog(req.user.id, 'created', 'project', project.project_id, `Project ${name} created`);
+
         res.status(201).json(project);
     } catch (error) {
         console.error(error);
@@ -88,6 +91,7 @@ const editProject = async (req, res) => {
         }
         const updatedProject = await updateProject(id, name, description, status);
         
+        await createActivityLog(req.user.id, 'updated', 'project', updatedProject.project_id, `Project ${name} updated`);
         res.status(200).json(updatedProject);
     } catch (error) {
         console.error(error);
@@ -108,6 +112,7 @@ const removeProject = async (req, res) => {
         }
 
         await deleteProject(id);
+        await createActivityLog(userId, 'deleted', 'project', project.project_id, `Project ${project.name} deleted`);
         
         res.status(200).json({message: 'Project deleted successfully'});
     } catch (error) {

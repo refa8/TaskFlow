@@ -1,5 +1,6 @@
 const { getAllTasks, createTask, getTaskById, updateTask, deleteTask } = require('../services/taskService');
 const { getProjectById } = require('../services/projectService');
+const { createActivityLog } = require('../services/activityLogService');
 
 const getTasks = async (req, res) => {
     try {
@@ -62,10 +63,13 @@ const addTask = async (req, res) => {
         if (project.owner_id !== owner_id) {
             return res.status(403).json({ message: "You are not authorized to create a task for this project" });
         }
+
         const task = await createTask(name, project_id, assigned_to, status, priority, owner_id);
         if (!task) {
             return res.status(400).json({ message: "You are not allowed to create a task for this project" });
         }
+
+        await createActivityLog(owner_id, 'created', 'task', task.task_id, `Task ${name} created`);
         res.status(201).json(task);
     } catch (error) {
         console.error(error);
@@ -163,6 +167,8 @@ const editTask = async (req, res) => {
 
 
         const updatedTask = await updateTask(id, name, project_id, assigned_to, status, priority);
+        
+        await createActivityLog(user_id, 'updated', 'task', updatedTask.task_id, `Task ${name} updated`);
 
         res.status(200).json(updatedTask);
     } catch (error) {
@@ -184,6 +190,7 @@ const removeTask = async (req, res) => {
 
         if (role === "admin") {
             await deleteTask(id);
+            await createActivityLog(user_id, 'deleted', 'task', task.task_id, `Task ${task.name} deleted`);
             return res.status(200).json({ message: "Task deleted successfully" });
         }
 
@@ -197,6 +204,7 @@ const removeTask = async (req, res) => {
                 return res.status(403).json({ message: "You are not authorized to delete this task" });
             }
             await deleteTask(id);
+            await createActivityLog(user_id, 'deleted', 'task', task.task_id, `Task ${task.name} deleted`);
             return res.status(200).json({ message: "Task deleted successfully" });
         }
 
