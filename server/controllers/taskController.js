@@ -89,7 +89,7 @@ const addTask = async (req, res) => {
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
     }
-    if (project.owner_id !== owner_id) {
+    if (role !== "admin" && project.owner_id !== owner_id) {
       return res.status(403).json({
         message: "You are not authorized to create a task for this project",
       });
@@ -280,6 +280,12 @@ const removeTask = async (req, res) => {
         task.task_id,
         `Task ${task.name} deleted`,
       );
+      sendToUser(task.assigned_to, {
+        type: "task_deleted",
+        taskId: task.task_id,
+        message: `Task ${task.name} was deleted`,
+        DeletedBy: user_id,
+      });
       return res.status(200).json({ message: "Task deleted successfully" });
     }
 
