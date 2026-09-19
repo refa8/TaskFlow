@@ -84,7 +84,7 @@ const getTasks = async (req, res) => {
 const addTask = async (req, res) => {
   try {
     const { name, project_id, assigned_to, status, priority } = req.body;
-    const owner_id = req.user.id; // Assuming the user ID is stored in req.user after authentication
+    const {id:owner_id,role} = req.user; // Assuming the user ID is stored in req.user after authentication
     const project = await getProjectById(project_id);
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
